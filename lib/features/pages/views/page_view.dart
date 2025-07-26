@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:uniapp/features/analytics/views/analytics_view.dart';
 import 'package:uniapp/features/home/views/home_view.dart';
+import 'package:uniapp/features/settings/settings_view.dart';
 
 class QuizAppBottomNav extends StatefulWidget {
   const QuizAppBottomNav({super.key});
@@ -11,11 +13,7 @@ class QuizAppBottomNav extends StatefulWidget {
 class _QuizAppBottomNavState extends State<QuizAppBottomNav> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    HomeView(),
-    Center(child: Text('Analytics')),
-    Center(child: Text('Settings')),
-  ];
+  final List<Widget> _pages = [HomeView(), AnalyticsView(), SettingsView()];
 
   void _onItemTapped(int index) {
     setState(() {

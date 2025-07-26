@@ -26,7 +26,6 @@ class HomeView extends StatelessWidget {
                   const SizedBox(height: 20),
                   const SizedBox(height: 220, child: ButtonRowLayout()),
                   const SizedBox(height: 20),
-
                   AnalyticsSection(),
                 ],
               ),

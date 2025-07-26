@@ -29,156 +29,118 @@ class AnalyticsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 20),
           child: Text(
-            "Recent Analytics",
+            " Recent Quiz Analytics",
             style: TextStyle(
-              fontSize: 17,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
         ),
-        Divider(),
-
-        const SizedBox(height: 12),
-        ListView.builder(
+        ListView.separated(
           itemCount: quizData.length,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 0),
+          padding: const EdgeInsets.symmetric(horizontal: 1),
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (context, index) {
             final quiz = quizData[index];
+            final statusColor = getStatusColor(quiz['status']);
 
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-              margin: const EdgeInsets.only(bottom: 16),
+            return Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: .06),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 6),
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        bottomLeft: Radius.circular(20),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: statusColor.withOpacity(0.1),
+                  child: Icon(
+                    getStatusIcon(quiz['status']),
+                    color: statusColor,
+                  ),
+                ),
+                title: Text(
+                  quiz['title'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.timer_outlined,
+                        size: 14,
+                        color: Colors.grey.shade600,
                       ),
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.redAccent.shade200,
-                          Colors.redAccent.shade700,
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                      const SizedBox(width: 6),
+                      Text(
+                        quiz['time'],
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 13,
+                        ),
                       ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.error_outline,
+                        size: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${quiz['errors']} error${quiz['errors'] == 1 ? '' : 's'}",
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    getStatusLabel(quiz['status']),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
                     ),
                   ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                quiz['title'],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: getStatusColor(
-                                    quiz['status'],
-                                  ).withValues(alpha: .15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      getStatusIcon(quiz['status']),
-                                      color: getStatusColor(quiz['status']),
-                                      size: 13,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      getStatusLabel(quiz['status']),
-                                      style: TextStyle(
-                                        color: getStatusColor(quiz['status']),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.timer_outlined,
-                                size: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                quiz['time'],
-                                style: TextStyle(
-                                  color: Colors.grey.shade800,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Icon(
-                                Icons.error_outline,
-                                size: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                              const SizedBox(width: 1),
-                              Text(
-                                "${quiz['errors']} error${quiz['errors'] == 1 ? '' : 's'}",
-                                style: TextStyle(
-                                  color: Colors.grey.shade800,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           },
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
