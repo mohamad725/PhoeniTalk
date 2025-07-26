@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 class QuizView extends StatefulWidget {
   const QuizView({super.key});
@@ -8,7 +10,7 @@ class QuizView extends StatefulWidget {
 }
 
 class _QuizViewState extends State<QuizView> {
-  SpeechToText _speechToText = SpeechToText();
+  final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   String _lastWords = '';
 
@@ -20,13 +22,18 @@ class _QuizViewState extends State<QuizView> {
 
   /// This has to happen only once per app
   void _initSpeech() async {
-    _speechEnabled = await _speechToText.initialize();
+    _speechEnabled = await _speechToText.initialize(onStatus: _onSpeechStatus);
     setState(() {});
   }
 
   /// Each time to start a speech recognition session
   void _startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult);
+    // Set the listening duration and pause duration
+    await _speechToText.listen(
+      onResult: _onSpeechResult,
+      listenFor: const Duration(seconds: 30), // Listen for a maximum of 30 seconds
+      pauseFor: const Duration(seconds: 5), // Allow a maximum of 5 seconds of silence
+    );
     setState(() {});
   }
 
@@ -47,9 +54,26 @@ class _QuizViewState extends State<QuizView> {
     });
   }
 
+  /// This is the callback that the SpeechToText plugin calls when
+  /// the status of the speech recognition changes.
+  void _onSpeechStatus(String status) {
+    setState(() {
+      print('Speech recognition status: $status');
+    });
+  }
+
+  @override
+  void dispose() {
+    _speechToText.stop(); // Stop listening when the widget is disposed
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Speech to Text'),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -67,19 +91,25 @@ class _QuizViewState extends State<QuizView> {
                 child: Text(
                   // If listening is active show the recognized words
                   _speechToText.isListening
-                      ? '$_lastWords'
+                      ? _lastWords
                       // If listening isn't active but could be tell the user
                       // how to start it, otherwise indicate that speech
                       // recognition is not yet ready or not supported on
                       // the target device
                       : _speechEnabled
-                      ? 'Tap the microphone to start listening...'
-                      : 'Speech not available',
+                          ? 'Tap the microphone to start listening...'
+                          : 'Speech not available',
                 ),
               ),
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed:
+            _speechToText.isListening ? _stopListening : _startListening,
+        tooltip: 'Listen',
+        child: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic),
       ),
     );
   }
