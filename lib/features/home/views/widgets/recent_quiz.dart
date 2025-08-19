@@ -1,30 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:uniapp/features/home/data/services/recent_quiz_service.dart';
 
-class RecentQuizContainer extends StatelessWidget {
+class RecentQuizContainer extends StatefulWidget {
   const RecentQuizContainer({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final bgColor = isDarkMode ? Colors.grey[800]! : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black;
-    final secondaryTextColor =
-        isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
+  State<RecentQuizContainer> createState() => _RecentQuizContainerState();
+}
 
+class _RecentQuizContainerState extends State<RecentQuizContainer> {
+  Map<String, dynamic> response = {};
+  getRecentQuizFromSupabase() async {
+    response = await RecentQuizService.recentQuiz.getRecentQuiz();
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    getRecentQuizFromSupabase();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (response.isEmpty) {
+      return Container(
+        height: 100,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "No recent quizzes",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 4),
+            Text(
+              "Take your first quiz to get started!",
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       height: 100,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: bgColor,
-        border: Border.all(
-          color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-          width: 1,
-        ),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey[200]!, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.1 : 0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -40,7 +74,7 @@ class RecentQuizContainer extends StatelessWidget {
               Text(
                 "RECENT QUIZ",
                 style: TextStyle(
-                  color: secondaryTextColor,
+                  color: Colors.grey,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
@@ -59,46 +93,27 @@ class RecentQuizContainer extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    "INEG200 Quiz",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    response['quiz_name'] ?? "",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
             ],
           ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "80/100",
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _getScoreColor(80).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              "${response['score']}%",
+              style: TextStyle(
+                color: _getScoreColor(80),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getScoreColor(80).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  "80%",
-                  style: TextStyle(
-                    color: _getScoreColor(80),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

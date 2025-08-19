@@ -3,11 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import 'package:uniapp/core/widgets/app_button.dart';
-import 'package:uniapp/core/widgets/app_snack_bar.dart';
 import 'package:uniapp/features/auth/data/services/auth_service.dart';
 import 'package:uniapp/features/auth/views/register_view.dart';
 import 'package:uniapp/features/auth/views/widgets/auth_text_field.dart';
-import 'package:uniapp/features/pages/views/page_view.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
@@ -29,6 +27,7 @@ class _LoginViewBodyState extends State<LoginViewBody> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool isLoading = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -49,7 +48,7 @@ class _LoginViewBodyState extends State<LoginViewBody> {
                 spacing: 20,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset('assets/icons/PhoeniTalk.png', height: 150),
+                  Image.asset('assets/images/PhoeniTalkl.png', height: 150),
 
                   Text(
                     "Lets get you in!",
@@ -61,14 +60,14 @@ class _LoginViewBodyState extends State<LoginViewBody> {
                   ),
 
                   AuthTextField(
-                    label: 'Enter your email...',
+                    label: 'Email...',
                     controller: _emailController,
 
                     icon: Icon(Icons.mail),
                   ),
 
                   AuthTextField(
-                    label: 'Enter your password...',
+                    label: 'Password...',
                     controller: _passwordController,
                     isObscure: true,
                     icon: Icon(Icons.lock),
@@ -79,7 +78,7 @@ class _LoginViewBodyState extends State<LoginViewBody> {
                         isLoading = true;
                       });
                       AuthService authService = AuthService.instance;
-                      final response = await authService.signInUser(
+                      await authService.signInUser(
                         email: _emailController.text,
                         password: _passwordController.text,
                         context: context,
@@ -87,20 +86,6 @@ class _LoginViewBodyState extends State<LoginViewBody> {
                       setState(() {
                         isLoading = false;
                       });
-                      if (response != null && response.id.isNotEmpty) {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute(
-                            builder: (context) => QuizAppBottomNav(),
-                          ),
-                        );
-                      } else {
-                        if (context.mounted) {
-                          snackBar(
-                            text: "unable to sign in, please try again later",
-                            context: context,
-                          );
-                        }
-                      }
                     },
                     child: Text(
                       "Sign in",
@@ -113,7 +98,7 @@ class _LoginViewBodyState extends State<LoginViewBody> {
                       children: [
                         TextSpan(text: "Don't have an account?"),
                         TextSpan(
-                          text: " Register here",
+                          text: " Register",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.red,

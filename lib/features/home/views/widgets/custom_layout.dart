@@ -7,19 +7,18 @@ class ButtonRowLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final smallButtonColor = isDarkMode ? Colors.grey[800]! : Colors.white;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
-            child: _MainQuizButton(
+            child: MainQuizButton(
               onTap: () {
                 Navigator.of(context).push(
-                  CupertinoPageRoute(builder: (context) => const QuizView()),
+                  CupertinoPageRoute(
+                    builder:
+                        (context) => const QuizView(quizTitle: 'Level_200'),
+                  ),
                 );
               },
               title: 'Start INEG200 QUIZ',
@@ -31,17 +30,31 @@ class ButtonRowLayout extends StatelessWidget {
           Column(
             children: [
               _SmallQuizButton(
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                    CupertinoPageRoute(
+                      builder:
+                          (context) => const QuizView(quizTitle: 'Level_300'),
+                    ),
+                  );
+                },
                 title: 'INEG300',
                 icon: Icons.play_arrow_sharp,
-                color: smallButtonColor,
+                color: Colors.white,
               ),
               const SizedBox(height: 12),
               _SmallQuizButton(
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                    CupertinoPageRoute(
+                      builder:
+                          (context) => const QuizView(quizTitle: 'Level_101'),
+                    ),
+                  );
+                },
                 title: 'ENGL101',
                 icon: Icons.play_arrow_outlined,
-                color: smallButtonColor,
+                color: Colors.white,
               ),
             ],
           ),
@@ -51,13 +64,14 @@ class ButtonRowLayout extends StatelessWidget {
   }
 }
 
-class _MainQuizButton extends StatelessWidget {
+class MainQuizButton extends StatelessWidget {
   final VoidCallback onTap;
   final String title;
   final String subtitle;
   final IconData icon;
 
-  const _MainQuizButton({
+  const MainQuizButton({
+    super.key,
     required this.onTap,
     required this.title,
     required this.subtitle,

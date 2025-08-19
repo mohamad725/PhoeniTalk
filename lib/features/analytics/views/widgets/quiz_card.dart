@@ -6,14 +6,12 @@ class QuizCard extends StatelessWidget {
   final Map<String, dynamic> quiz;
   final bool isExpanded;
   final VoidCallback onTap;
-  final bool isDarkMode;
 
   const QuizCard({
     super.key,
     required this.quiz,
     required this.isExpanded,
     required this.onTap,
-    required this.isDarkMode,
   });
 
   @override
@@ -24,11 +22,11 @@ class QuizCard extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.grey[800] : Colors.white,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0 : 0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               spreadRadius: 1,
             ),
@@ -43,17 +41,17 @@ class QuizCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    quiz['title'],
+                    quiz['quiz_name'] ?? "",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : Colors.black,
+                      color: Colors.black,
                     ),
                   ),
                 ),
                 Icon(
                   isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  color: Colors.grey[600],
                 ),
               ],
             ),
@@ -67,14 +65,12 @@ class QuizCard extends StatelessWidget {
                   label: 'Attempts',
                   icon: Icons.list_alt_outlined,
                   color: Colors.blue,
-                  isDarkMode: isDarkMode,
                 ),
                 QuizStat(
-                  value: '${quiz['averageScore']}%',
+                  value: '${quiz['score'].roundToDouble()}%',
                   label: 'Score',
                   icon: Icons.star,
                   color: Colors.amber,
-                  isDarkMode: isDarkMode,
                 ),
               ],
             ),
@@ -87,15 +83,17 @@ class QuizCard extends StatelessWidget {
                   QuizDetail(
                     icon: Icons.list_alt_outlined,
                     label: '${quiz['questions']} Questions',
-                    isDarkMode: isDarkMode,
                   ),
                   const SizedBox(width: 16),
                   QuizDetail(
                     icon: Icons.timer,
-                    label: quiz['duration'],
-                    isDarkMode: isDarkMode,
+                    label: quiz['quiz_time'].toString(),
                   ),
                   const SizedBox(width: 16),
+                  QuizDetail(
+                    icon: Icons.close,
+                    label: '${quiz['errors']} mistakes',
+                  ),
                 ],
               ),
               const SizedBox(height: 16),

@@ -5,7 +5,6 @@ class QuizStat extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final bool isDarkMode;
 
   const QuizStat({
     super.key,
@@ -13,7 +12,6 @@ class QuizStat extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.color,
-    required this.isDarkMode,
   });
 
   @override
@@ -30,18 +28,12 @@ class QuizStat extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black,
+                color: Colors.black,
               ),
             ),
           ],
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }

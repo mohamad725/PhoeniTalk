@@ -1,232 +1,331 @@
+import 'dart:async';
+import 'package:deepgram_speech_to_text/deepgram_speech_to_text.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uniapp/core/services/speech_to_text_service.dart';
+import 'package:uniapp/core/widgets/app_button.dart';
+import 'package:uniapp/features/completed/completed_view.dart';
+import 'package:uniapp/features/quizzes/data/local_data.dart';
+import 'package:uniapp/features/quizzes/data/quizzes_service.dart';
+import 'package:uniapp/features/quizzes/views/widgets/ai_feedback.dart';
+import 'package:uniapp/features/quizzes/views/widgets/micro_status.dart';
+import 'package:uniapp/features/quizzes/views/widgets/quiz_app_bar.dart';
+import 'package:uniapp/features/quizzes/views/widgets/quiz_error.dart';
+import 'package:uniapp/features/quizzes/views/widgets/quiz_exit_dialog.dart';
+import 'package:uniapp/features/quizzes/views/widgets/quiz_loading.dart';
+import 'package:uniapp/features/quizzes/views/widgets/quiz_progress_bar.dart';
+import 'package:uniapp/features/quizzes/views/widgets/quiz_question_card.dart';
+import 'package:uniapp/features/quizzes/views/widgets/record_button.dart';
+import 'package:uniapp/global_services.dart/quiz_analytics_service.dart';
 
 class QuizView extends StatefulWidget {
-  const QuizView({super.key});
+  const QuizView({super.key, required this.quizTitle});
+  final String quizTitle;
 
   @override
   State<QuizView> createState() => _QuizViewState();
 }
 
-class _QuizViewState extends State<QuizView>
-    with SingleTickerProviderStateMixin {
+class _QuizViewState extends State<QuizView> {
   final PageController _pageController = PageController();
-  final List<String> questions = [
-    '🗣️ How do you say "Hello" in French?',
-    '🏙️ What is the capital of Lebanon?',
-    '🍎 Say the color of the apple in English.',
-  ];
-
+  final QuizService _quizService = QuizService.instance;
+  List<String> questions = [];
   int currentPage = 0;
   bool isAnswering = false;
+  bool isLoading = true;
+  String? errorMessage;
+  late final SpeechToTextService _speechService;
+  StreamSubscription<DeepgramListenResult>? _speechSub;
+  String currentTranscript = '';
+  Timer? _recordingTimer;
+  String? answerFeedback;
+  bool? lastAnswerStatus;
+  double get progress =>
+      questions.isEmpty ? 0 : (currentPage + 1) / questions.length;
+  DateTime? _quizStartTime;
+  Duration? _quizCompletionTime;
+  Timer? _quizTimer;
+  Duration _elapsedTime = Duration.zero;
 
-  double get progress => (currentPage + 1) / questions.length;
+  @override
+  void initState() {
+    super.initState();
+    _speechService = SpeechToTextService(
+      deepgram: Deepgram('821d8edffaa235b802b89c1649a285b3b2a34cbc'),
+    );
+    _loadQuestions();
+    _startQuizTimer();
+  }
 
-  void _handleVoiceAnswer() {
-    if (isAnswering) return;
-
-    setState(() => isAnswering = true);
-
-    Future.delayed(const Duration(seconds: 2), () {
-      final bool correct = currentPage % 2 == 0; // Dummy logic
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            correct ? '✅ Correct!' : '❌ Try again!',
-            style: const TextStyle(fontSize: 16),
-          ),
-          backgroundColor: correct ? Colors.green : Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-      setState(() => isAnswering = false);
-
-      if (correct && currentPage < questions.length - 1) {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-        setState(() => currentPage++);
-      } else if (correct && currentPage == questions.length - 1) {
-        _showCompletionDialog();
-      }
+  void _startQuizTimer() {
+    _quizStartTime = DateTime.now();
+    _quizTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _elapsedTime = DateTime.now().difference(_quizStartTime!);
+      });
     });
   }
 
-  void _showCompletionDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text("🎉 Quiz Complete!"),
-            content: const Text("You've finished all questions."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Close"),
-              ),
-            ],
-          ),
-    );
+  void _stopQuizTimer() {
+    _quizTimer?.cancel();
+    _quizCompletionTime = DateTime.now().difference(_quizStartTime!);
+    print("_quizCompletionTime: $_quizCompletionTime");
   }
 
-  void _showExitDialog() {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: "Exit",
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const SizedBox(); // Required but not used
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedValue = Curves.easeInOut.transform(animation.value);
-        return Opacity(
-          opacity: animation.value,
-          child: Transform.translate(
-            offset: Offset(0, (1 - curvedValue) * 50),
-            child: Center(
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        size: 48,
-                        color: Color(0xFFE53935),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "Exit Quiz?",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "Are you sure you want to exit the quiz? Your progress will be lost.",
-                        style: TextStyle(color: Colors.black54),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text(
-                                "Cancel",
-                                style: TextStyle(color: Colors.black),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE53935),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text(
-                                "Exit",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+  Future<void> _loadQuestions() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+
+      final selectedQuestions = await _quizService.getSelectedQuestions(
+        quizTitle: widget.quizTitle,
+      );
+      if (selectedQuestions.isEmpty) {
+        throw Exception('No questions available');
+      }
+
+      await LocalData.instance.setAttempt(quizTitle: widget.quizTitle);
+      setState(() {
+        questions = selectedQuestions;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load questions: ${e.toString()}';
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleVoiceAnswer() async {
+    if (isAnswering) {
+      await _stopRecording();
+      return;
+    }
+
+    setState(() {
+      isAnswering = true;
+      currentTranscript = '';
+      answerFeedback = null;
+      lastAnswerStatus = null;
+    });
+
+    try {
+      final stream = await _speechService.startListening();
+      if (stream == null) throw Exception('Could not start listening');
+
+      _speechSub?.cancel();
+      _speechSub = stream.listen(
+        (result) {
+          if (result.transcript?.isNotEmpty == true) {
+            setState(() {
+              currentTranscript = result.transcript!;
+            });
+          }
+        },
+        onError: (error) {
+          setState(() {
+            isAnswering = false;
+            errorMessage = 'Speech error: $error';
+          });
+          _speechSub?.cancel();
+        },
+        onDone: () {
+          _evaluateAnswer(currentTranscript);
+          _speechSub?.cancel();
+        },
+      );
+    } catch (e) {
+      setState(() {
+        isAnswering = false;
+        errorMessage = 'Error starting speech recognition: $e';
+      });
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    if (!isAnswering) return;
+
+    await _speechService.stopListening();
+    await _speechSub?.cancel();
+    await _evaluateAnswer(currentTranscript);
+  }
+
+  Future<void> _evaluateAnswer(String transcript) async {
+    if (!isAnswering) return;
+
+    try {
+      setState(() => isAnswering = false);
+
+      if (transcript.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No speech detected. Please try again.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
           ),
         );
-      },
+        return;
+      }
+
+      final currentQuestion = questions[currentPage];
+      final response = await _quizService.evaluateUserAnswer(
+        currentQuestion,
+        transcript,
+      );
+
+      if (response.isNotEmpty) {
+        setState(() {
+          answerFeedback = response['feedback'] ?? 'No feedback available.';
+          lastAnswerStatus = response['status'] == true;
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final scorePerQuestion = 100 / questions.length;
+        final earnedScore = lastAnswerStatus == true ? scorePerQuestion : 0;
+        if (lastAnswerStatus == false) {
+          bool q1Error = currentPage == 1 ? true : false;
+          bool q2Error = currentPage == 2 ? true : false;
+          bool q3Error = currentPage == 3 ? true : false;
+
+          await saveErrors(q1Error, q2Error, q3Error);
+        }
+        await prefs.setDouble(
+          '${widget.quizTitle}_$currentPage',
+          earnedScore.toDouble(),
+        );
+      }
+      _showFeedbackBottomSheet();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error evaluating answer: $e')));
+    }
+  }
+
+  void _goToNextQuestion() async {
+    if (currentPage < questions.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      setState(() {
+        currentPage++;
+        answerFeedback = null;
+        lastAnswerStatus = null;
+      });
+    } else {
+      _stopQuizTimer();
+
+      final result = await getTotalScore(quizTitle: widget.quizTitle.trim());
+
+      await QuizAnalyticsService.instance.getQuizAnalytics();
+
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          CupertinoPageRoute(
+            builder:
+                (context) => QuizCompletedView(
+                  quizTitle: widget.quizTitle,
+                  score: result,
+                  time: _quizCompletionTime,
+                ),
+          ),
+          (routes) => false,
+        );
+      }
+    }
+  }
+
+  void _showFeedbackBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FeedbackContainer(
+                  isCorrect: lastAnswerStatus,
+                  feedback: answerFeedback ?? 'No feedback available.',
+                ),
+                SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 200,
+                    child: AppButton(
+                      ontap: () {
+                        Navigator.pop(context);
+                        _goToNextQuestion();
+                      },
+                      child: const Text(
+                        'Continue',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
     );
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _speechSub?.cancel();
+    _speechService.dispose();
+    _recordingTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryRed = Color(0xFFE53935);
+    if (isLoading) {
+      return QuizLoading(primaryRed: primaryRed);
+    }
+
+    if (errorMessage != null) {
+      return quizError(
+        errorMessage: errorMessage,
+        primaryRed: primaryRed,
+        onTap: _loadQuestions,
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar with progress and exit
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black87),
-                    onPressed: () => _showExitDialog(),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Question ${currentPage + 1}/${questions.length}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
+            QuizAppBar(
+              currentPage: currentPage,
+              totalQuestions: questions.length,
+              onExitPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => ExitQuizDialog(),
+                );
+              },
             ),
-
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: Colors.red.shade100,
-                  valueColor: const AlwaysStoppedAnimation<Color>(primaryRed),
-                ),
-              ),
-            ),
+            QuizProgressBar(progress: progress),
             const SizedBox(height: 24),
-
-            // Animated PageView
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -235,60 +334,19 @@ class _QuizViewState extends State<QuizView>
                 itemBuilder: (context, index) {
                   return AnimatedSwitcher(
                     duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (child, animation) {
-                      return ScaleTransition(scale: animation, child: child);
-                    },
                     child: Column(
-                      key: ValueKey(index),
+                      key: ValueKey(questions[index]),
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFDEAEA),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: primaryRed.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              questions[index],
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+                        QuizQuestionCard(
+                          question: questions[index],
+                          isAnswering: isAnswering,
                         ),
+                        if (answerFeedback == null)
+                          MicroStatus(
+                            isAnswering: isAnswering,
+                            currentTranscript: currentTranscript,
+                          ),
                         const SizedBox(height: 32),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: primaryRed.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              isAnswering
-                                  ? '🎙️ Listening...'
-                                  : 'Tap the microphone to answer by voice',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.black54,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   );
@@ -296,20 +354,13 @@ class _QuizViewState extends State<QuizView>
               ),
             ),
 
-            // Floating Mic Button
-            Container(
-              margin: const EdgeInsets.only(bottom: 32),
-              child: FloatingActionButton(
-                onPressed: _handleVoiceAnswer,
-                backgroundColor: primaryRed,
-                child:
-                    isAnswering
-                        ? const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
-                        )
-                        : const Icon(Icons.mic, size: 30, color: Colors.white),
-              ),
+            const SizedBox(height: 16),
+            QuizButton(
+              answerFeedback: answerFeedback,
+              isAnswering: isAnswering,
+              onPressed: () {
+                _handleVoiceAnswer();
+              },
             ),
           ],
         ),

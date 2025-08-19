@@ -5,7 +5,6 @@ class SummaryStat extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final bool isDarkMode;
 
   const SummaryStat({
     super.key,
@@ -13,7 +12,6 @@ class SummaryStat extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.color,
-    required this.isDarkMode,
   });
 
   @override
@@ -23,7 +21,7 @@ class SummaryStat extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(isDarkMode ? 0.2 : 0.1),
+            color: color.withValues(alpha: .1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 20),
@@ -34,16 +32,10 @@ class SummaryStat extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.white : Colors.black,
+            color: Colors.black,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }

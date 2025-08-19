@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:uniapp/features/test_ppage.dart';
+import 'package:uniapp/features/get_started/views/get_started_view.dart';
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
@@ -9,8 +9,12 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData().copyWith(textTheme: GoogleFonts.poppinsTextTheme()),
-      home: SpeechToTextPage(),
+      theme: ThemeData().copyWith(
+        textTheme: GoogleFonts.poppinsTextTheme(),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(backgroundColor: Colors.white),
+      ),
+      home: GetStartedView(),
     );
   }
 }

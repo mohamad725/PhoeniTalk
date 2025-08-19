@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uniapp/core/widgets/app_snack_bar.dart';
+import 'package:uniapp/features/pages/views/page_view.dart';
 
 class AuthService {
   AuthService._();
@@ -9,19 +11,25 @@ class AuthService {
   final _auth = Supabase.instance.client.auth;
   static Future<void> getUserName() async {}
   static Future<void> getUserEmail() async {}
-  Future<User?> signUpUser({
+  Future signUpUser({
     required String email,
     required String password,
     required String displayName,
     required BuildContext context,
   }) async {
     try {
-      final response = await _auth.signUp(
+      await _auth.signUp(
         email: email,
         password: password,
         data: {'displayName': displayName},
       );
-      return response.user;
+
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          CupertinoPageRoute(builder: (context) => QuizAppBottomNav()),
+          (routes) => false,
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         snackBar(text: e.toString(), context: context);
@@ -30,17 +38,20 @@ class AuthService {
     }
   }
 
-  Future<User?> signInUser({
+  Future signInUser({
     required String email,
     required String password,
     required BuildContext context,
   }) async {
     try {
-      final response = await _auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      return response.user;
+      await _auth.signInWithPassword(email: email, password: password);
+
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          CupertinoPageRoute(builder: (context) => QuizAppBottomNav()),
+          (routes) => false,
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         snackBar(text: e.toString(), context: context);
@@ -51,9 +62,9 @@ class AuthService {
 
   Future<void> logout() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
       await _auth.signOut();
     } catch (e) {}
   }
-
-  static Future<void> forgotPassword() async {}
 }

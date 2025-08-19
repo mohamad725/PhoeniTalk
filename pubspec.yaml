@@ -21,7 +21,10 @@ dependencies:
   modal_progress_hud_nsn: ^0.5.1
   record: ^6.0.0
   permission_handler: ^12.0.1
-  
+  shared_preferences: ^2.5.3
+  confetti: ^0.8.0
+  flutter_launcher_icons: ^0.14.4
+  url_launcher: ^6.3.0
 
 
 dev_dependencies:
@@ -34,4 +37,5 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/images/
   
