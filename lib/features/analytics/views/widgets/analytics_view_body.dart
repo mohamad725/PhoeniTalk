@@ -35,8 +35,9 @@ class _AnalyticsViewBodyState extends State<AnalyticsViewBody> {
     int validCount = 0;
 
     for (var quiz in quizzes) {
-      if (quiz['time'] != null && quiz['time'].toString().contains(":")) {
-        final parts = quiz['time'].split(':');
+      if (quiz['quiz_time'] != null &&
+          quiz['quiz_time'].toString().contains(":")) {
+        final parts = quiz['quiz_time'].split(':');
         if (parts.length == 2) {
           final minutes = int.tryParse(parts[0]) ?? 0;
           final seconds = int.tryParse(parts[1]) ?? 0;

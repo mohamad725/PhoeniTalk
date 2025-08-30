@@ -68,7 +68,7 @@ class _RegisterViewBodyState extends State<RegisterViewBody> {
                         ),
                       ),
                       Text(
-                        "let's create your account.",
+                        "create your account.",
                         style: TextStyle(
                           color: Colors.red,
                           fontSize: 20,

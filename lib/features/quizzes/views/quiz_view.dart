@@ -122,7 +122,7 @@ class _QuizViewState extends State<QuizView> {
         (result) {
           if (result.transcript?.isNotEmpty == true) {
             setState(() {
-              currentTranscript = result.transcript!;
+              currentTranscript += '${result.transcript!} ';
             });
           }
         },
@@ -243,6 +243,7 @@ class _QuizViewState extends State<QuizView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
       backgroundColor: Colors.transparent,
       builder:
           (context) => Container(

@@ -56,7 +56,7 @@ class ContactSupportView extends StatelessWidget {
   }
 
   Future<void> _launchWhatsApp() async {
-    final Uri uri = Uri.parse('https://wa.me/+2250714503048');
+    final Uri uri = Uri.parse('https://wa.me/+961589142');
     if (!await launchUrl(uri)) {
       throw Exception('Could not launch $uri');
     }

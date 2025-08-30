@@ -4,17 +4,22 @@ import 'package:http/http.dart' as http;
 
 class GeminiService {
   static const String _apiKey = 'AIzaSyD0v261kYZWcW7dyU8ePUvdgWooluSvfVc';
+  final List<Map<String, String>> _conversationHistory = [];
 
   Future<List<String>> selectQuizQuestions(
     List<dynamic> allQuestions,
     int count,
   ) async {
+    if (_conversationHistory.isNotEmpty) {
+      _conversationHistory.clear();
+    }
     final prompt = '''
     From the following quiz questions, select  $count questions 
     . 
     choose them super random ones.
     Return only the question texts in a JSON array:
-   dont add the \'\'\' json thing just stright to the point as an api 
+   dont add the \'\'\' json thing just stright to the point as an api
+   always choose diffrent questions. other than you selected as well. 
     All Questions: ${jsonEncode(allQuestions)},
     ''';
 
@@ -42,6 +47,8 @@ class GeminiService {
         final responseData = jsonDecode(response.body);
         final text =
             responseData['candidates'][0]['content']['parts'][0]['text'];
+        _conversationHistory.add({'role': 'assistant', 'content': text});
+
         return List<String>.from(jsonDecode(text));
       }
       return [];
@@ -66,6 +73,7 @@ Do not include any code fences, extra formatting, or explanations. Return only t
 and also dont be strict. even if he replyed with 1 word check if its relevent or nah.
 dont add the \'\'\' json thing just stright to the point as an api.
 ''';
+    _conversationHistory.add({'role': 'user', 'content': prompt});
 
     try {
       final response = await http.post(
@@ -93,6 +101,7 @@ dont add the \'\'\' json thing just stright to the point as an api.
         final innerJson = jsonDecode(
           responseData['candidates'][0]['content']['parts'][0]['text'],
         );
+        _conversationHistory.add({'role': 'assistant', 'content': innerJson});
 
         final status = innerJson['status'];
         final feedback = innerJson['feedback'];
@@ -106,5 +115,9 @@ dont add the \'\'\' json thing just stright to the point as an api.
       debugPrint('Gemini error: $e');
       return {};
     }
+  }
+
+  void clearHistory() {
+    _conversationHistory.clear();
   }
 }
